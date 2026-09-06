@@ -3,156 +3,133 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Pulse - Tracker & Alerts</title>
+  <title>Global Futures & Stock Tracker</title>
+  <!-- Load Chart.js CDN for interactive charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Color Palette Definitions */
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --accent: #38bdf8;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --green: #22c55e;
-      --red: #ef4444;
-      --border: #334155;
-      --input-bg: #0f172a;
-      --table-hover: #26334d;
-    }
-
-    /* Light Theme Overrides */
-    [data-theme="light"] {
-      --bg: #f8fafc;
+      --bg: #090c15;
       --card-bg: #ffffff;
-      --accent: #0284c7;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --green: #16a34a;
-      --red: #dc2626;
+      --card-expanded-bg: #f8fafc;
+      --accent: #2563eb;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --text-header: #ffffff;
+      --green-bg: #10b981;
+      --green-text: #ffffff;
+      --red-bg: #ef4444;
+      --red-text: #ffffff;
       --border: #e2e8f0;
-      --input-bg: #f1f5f9;
-      --table-hover: #f1f5f9;
+      --dark-card: #111827;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background-color 0.2s, color 0.2s; }
-    body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 600px; margin: 0 auto; padding-bottom: 40px; }
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --text-header: #0f172a;
+    }
 
-    header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
-    h1 { font-size: 1.4rem; color: var(--accent); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text-main); padding: 16px; max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
 
-    .header-actions { display: flex; gap: 8px; align-items: center; }
+    /* Top Hero Header */
+    .hero-header { text-align: center; color: var(--text-header); padding: 20px 0 24px 0; }
+    .hero-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+    .hero-subtitle { font-size: 0.95rem; color: #94a3b8; font-weight: 400; }
+
+    /* Search/Control Bar */
+    .top-controls { display: flex; gap: 8px; margin-bottom: 16px; }
+    .search-box { flex: 1; background: #ffffff; border-radius: 24px; padding: 10px 16px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .search-box input { border: none; outline: none; background: transparent; width: 100%; font-size: 0.9rem; }
     
-    .theme-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
+    .icon-btn { background: #ffffff; border: none; padding: 10px 14px; border-radius: 24px; cursor: pointer; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-    .card { background: var(--card-bg); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
-    .card-title { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px; font-weight: 600; }
+    /* Main Container Card */
+    .app-card { background: #ffffff; border-radius: 20px; padding: 12px 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
 
-    input, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 1rem; margin-bottom: 8px; outline: none; }
-    input:focus { border-color: var(--accent); }
-    button { background: var(--accent); color: white; font-weight: bold; cursor: pointer; border: none; }
-    button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    /* Column Headers */
+    .table-headers { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-sub); padding: 8px 12px; border-bottom: 1px solid var(--border); font-weight: 600; }
 
-    .flex-group { display: flex; gap: 8px; }
-    .flex-group input { margin-bottom: 0; }
+    /* Stock Row Items */
+    .stock-row { border-bottom: 1px solid var(--border); transition: background-color 0.2s; cursor: pointer; }
+    .stock-row:last-child { border-bottom: none; }
+    .stock-summary { display: flex; justify-content: space-between; align-items: center; padding: 12px; }
 
-    /* Stock List */
-    .stock-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-    .stock-item:last-child { border-bottom: none; }
-    .stock-symbol { font-weight: bold; font-size: 1.1rem; }
-    .stock-price { font-size: 1.1rem; font-weight: bold; text-align: right; }
-    .stock-change { font-size: 0.85rem; text-align: right; }
-    .up { color: var(--green); }
-    .down { color: var(--red); }
+    .stock-info { display: flex; align-items: center; gap: 12px; }
+    .stock-avatar { width: 36px; height: 36px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; }
+    .stock-ticker { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
+    .stock-subtext { font-size: 0.75rem; color: var(--text-sub); }
 
-    .alert-badge { font-size: 0.75rem; background: var(--border); padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block; color: var(--accent); }
-    .alert-triggered { background: var(--red); color: white; animation: pulse 1s infinite alternate; }
+    .stock-metrics { text-align: right; display: flex; align-items: center; gap: 12px; }
+    .stock-ltp { font-weight: 700; font-size: 0.95rem; color: var(--text-main); }
 
-    /* Browse Table */
-    .table-container { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-    th { color: var(--text-muted); font-weight: 600; padding: 8px 4px; border-bottom: 1px solid var(--border); }
-    td { padding: 10px 4px; border-bottom: 1px solid var(--border); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover { background-color: var(--table-hover); }
+    /* Badge Pills */
+    .badge-pill { padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.8rem; min-width: 68px; text-align: center; }
+    .badge-pill.up { background-color: var(--green-bg); color: var(--green-text); }
+    .badge-pill.down { background-color: var(--red-bg); color: var(--red-text); }
 
-    .add-btn { background: var(--accent); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; width: auto; margin: 0; }
+    /* Expandable Detail Panel */
+    .stock-details { display: none; background: var(--card-expanded-bg); padding: 16px; border-top: 1px solid var(--border); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+    .stock-details.open { display: block; }
 
-    @keyframes pulse { from { opacity: 0.7; } to { opacity: 1; } }
-    .hidden { display: none; }
+    .chart-container { position: relative; height: 180px; width: 100%; margin: 12px 0; }
+
+    .detail-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+    .btn-delete { background: #fee2e2; color: #dc2626; border: none; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>Stock Pulse</h1>
-    <div class="header-actions">
-      <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()">☀️</button>
-      <button class="secondary" style="width: auto; padding: 6px 12px; font-size: 0.85rem;" onclick="toggleSettings()">API Key</button>
-    </div>
-  </header>
-
-  <div id="settings-card" class="card">
-    <div class="card-title">Finnhub API Key Setup</div>
-    <input type="password" id="api-key-input" placeholder="Paste Finnhub API Key here">
-    <button onclick="saveApiKey()">Save Key</button>
+  <!-- Hero Header -->
+  <div class="hero-header">
+    <div class="hero-title">Global Futures</div>
+    <div class="hero-subtitle">Trade price movements of global giants 24×7</div>
   </div>
 
-  <div class="card">
-    <div class="card-title">Track Custom Stock</div>
-    <div class="flex-group" style="margin-bottom: 8px;">
-      <input type="text" id="symbol-input" placeholder="Ticker (e.g. NVDA)" style="text-transform: uppercase;">
-      <input type="number" id="target-input" placeholder="Target Price ($)" step="0.01">
+  <!-- Top Search & Controls -->
+  <div class="top-controls">
+    <div class="search-box">
+      <input type="text" id="symbol-input" placeholder="Search or add ticker (e.g. AAPL, TSLA)" style="text-transform: uppercase;">
     </div>
-    <button onclick="addStockFromInput()">Add Ticker</button>
+    <button class="icon-btn" onclick="addStockFromInput()">+ Add</button>
+    <button class="icon-btn" id="theme-btn" onclick="toggleTheme()">☀️</button>
   </div>
 
-  <div class="card">
-    <div class="card-title">Browse Famous Stocks</div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Ticker</th>
-            <th>Company</th>
-            <th>Sector</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="famous-stocks-body">
-          </tbody>
-      </table>
+  <!-- Settings / API Key -->
+  <div id="settings-card" class="app-card hidden" style="margin-bottom: 16px; padding: 16px;">
+    <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 8px;">Finnhub API Key</div>
+    <div style="display: flex; gap: 8px;">
+      <input type="password" id="api-key-input" placeholder="Paste API Key" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid var(--border);">
+      <button onclick="saveApiKey()" style="background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold;">Save</button>
     </div>
   </div>
 
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <div class="card-title" style="margin:0;">My Watchlist</div>
-      <button class="secondary" style="width: auto; padding: 4px 8px; font-size: 0.75rem;" onclick="fetchAllPrices()">Refresh All</button>
+  <!-- Main Stock List Card -->
+  <div class="app-card">
+    <div class="table-headers">
+      <span>Name / Volume</span>
+      <span>LTP / 24h Chg%</span>
     </div>
-    <div id="watchlist">
-      <div style="text-align: center; color: var(--text-muted); padding: 12px;">No stocks added yet.</div>
+
+    <div id="watchlist-container">
+      <!-- Dynamic Rows Load Here -->
     </div>
   </div>
 
   <script>
     let apiKey = localStorage.getItem("finnhub_api_key") || "";
-    let watchlist = JSON.parse(localStorage.getItem("stock_watchlist")) || [];
+    let watchlist = JSON.parse(localStorage.getItem("stock_watchlist")) || [
+      { symbol: "GOOGL", targetPrice: null, currentPrice: 312.23, change: -2.21 },
+      { symbol: "NVDA", targetPrice: null, currentPrice: 191.20, change: 1.58 },
+      { symbol: "TSLA", targetPrice: null, currentPrice: 428.00, change: 1.30 }
+    ];
+    let chartInstances = {};
     let currentTheme = localStorage.getItem("app_theme") || "dark";
 
-    // Curated Famous Stocks List
-    const famousStocks = [
-      { symbol: "AAPL", name: "Apple Inc.", sector: "Tech" },
-      { symbol: "MSFT", name: "Microsoft", sector: "Tech" },
-      { symbol: "GOOGL", name: "Alphabet (Google)", sector: "Tech" },
-      { symbol: "AMZN", name: "Amazon", sector: "Commerce" },
-      { symbol: "NVDA", name: "NVIDIA", sector: "Semiconductors" },
-      { symbol: "TSLA", name: "Tesla", sector: "Automotive" },
-      { symbol: "META", name: "Meta (Facebook)", sector: "Tech" }
-    ];
-
-    // Theme Management
     function applyTheme(theme) {
       document.documentElement.setAttribute("data-theme", theme);
-      document.getElementById("theme-toggle").textContent = theme === "dark" ? "☀️" : "🌙";
+      document.getElementById("theme-btn").textContent = theme === "dark" ? "☀️" : "🌙";
       localStorage.setItem("app_theme", theme);
     }
 
@@ -161,77 +138,30 @@
       applyTheme(currentTheme);
     }
 
-    // Initialize App
     applyTheme(currentTheme);
-    renderFamousStocksTable();
-
-    if (apiKey) {
-      document.getElementById("settings-card").classList.add("hidden");
-      document.getElementById("api-key-input").value = apiKey;
-    }
-
-    renderWatchlist();
-    if (apiKey && watchlist.length > 0) {
-      fetchAllPrices();
-    }
+    if (!apiKey) document.getElementById("settings-card").classList.remove("hidden");
 
     function saveApiKey() {
       const key = document.getElementById("api-key-input").value.trim();
-      if (!key) return alert("Please enter a valid key");
+      if (!key) return alert("Please enter a key.");
       apiKey = key;
       localStorage.setItem("finnhub_api_key", key);
       document.getElementById("settings-card").classList.add("hidden");
       fetchAllPrices();
     }
 
-    function toggleSettings() {
-      document.getElementById("settings-card").classList.toggle("hidden");
-    }
-
-    function renderFamousStocksTable() {
-      const tbody = document.getElementById("famous-stocks-body");
-      tbody.innerHTML = famousStocks.map(stock => `
-        <tr>
-          <td><strong>${stock.symbol}</strong></td>
-          <td>${stock.name}</td>
-          <td style="color: var(--text-muted);">${stock.sector}</td>
-          <td>
-            <button class="add-btn" onclick="addStock('${stock.symbol}')">+ Add</button>
-          </td>
-        </tr>
-      `).join("");
-    }
-
     function addStockFromInput() {
-      const symbolInput = document.getElementById("symbol-input");
-      const targetInput = document.getElementById("target-input");
-      const symbol = symbolInput.value.trim().toUpperCase();
-      const targetPrice = parseFloat(targetInput.value);
+      const input = document.getElementById("symbol-input");
+      const symbol = input.value.trim().toUpperCase();
+      if (!symbol) return alert("Enter ticker");
 
-      if (!symbol) return alert("Please enter a stock ticker.");
+      if (watchlist.some(item => item.symbol === symbol)) return alert("Already added");
 
-      addStock(symbol, targetPrice);
-      symbolInput.value = "";
-      targetInput.value = "";
-    }
-
-    function addStock(symbol, targetPrice = null) {
-      if (watchlist.some(item => item.symbol === symbol)) {
-        return alert(`${symbol} is already in your watchlist!`);
-      }
-
-      const newStock = {
-        symbol: symbol,
-        targetPrice: targetPrice,
-        currentPrice: null,
-        change: null,
-        alertTriggered: false
-      };
-
-      watchlist.push(newStock);
+      watchlist.push({ symbol: symbol, currentPrice: 0, change: 0, targetPrice: null });
       saveWatchlist();
       renderWatchlist();
       fetchPrice(symbol);
+      input.value = "";
     }
 
     function removeStock(symbol) {
@@ -244,75 +174,121 @@
       localStorage.setItem("stock_watchlist", JSON.stringify(watchlist));
     }
 
-    async function fetchPrice(symbol) {
-      if (!apiKey) {
-        document.getElementById("settings-card").classList.remove("hidden");
-        return;
+    function toggleExpand(symbol) {
+      const detailEl = document.getElementById(`details-${symbol}`);
+      const isOpen = detailEl.classList.contains("open");
+
+      // Close all active details
+      document.querySelectorAll('.stock-details').forEach(el => el.classList.remove("open"));
+
+      if (!isOpen) {
+        detailEl.classList.add("open");
+        renderChart(symbol);
       }
+    }
 
+    function renderChart(symbol) {
+      const canvasId = `chart-${symbol}`;
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+
+      if (chartInstances[symbol]) chartInstances[symbol].destroy();
+
+      // Mock historical data line
+      const basePrice = watchlist.find(s => s.symbol === symbol)?.currentPrice || 100;
+      const dataPoints = Array.from({length: 7}, () => (basePrice * (0.95 + Math.random() * 0.1)).toFixed(2));
+
+      chartInstances[symbol] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+          datasets: [{
+            label: `${symbol} Price Trend`,
+            data: dataPoints,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { display: false }, y: { display: false } }
+        }
+      });
+    }
+
+    async function fetchPrice(symbol) {
+      if (!apiKey) return;
       try {
-        const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`);
-        const data = await response.json();
-
-        if (data && data.c !== undefined && data.c !== 0) {
-          const index = watchlist.findIndex(item => item.symbol === symbol);
-          if (index !== -1) {
-            watchlist[index].currentPrice = data.c;
-            watchlist[index].change = data.d;
-
-            if (watchlist[index].targetPrice) {
-              watchlist[index].alertTriggered = data.c >= watchlist[index].targetPrice;
-            }
-
+        const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`);
+        const data = await res.json();
+        if (data && data.c) {
+          const idx = watchlist.findIndex(s => s.symbol === symbol);
+          if (idx !== -1) {
+            watchlist[idx].currentPrice = data.c;
+            watchlist[idx].change = data.dp; // Percentage change
             saveWatchlist();
             renderWatchlist();
           }
         }
-      } catch (err) {
-        console.error("Fetch error:", err);
-      }
+      } catch (err) { console.error(err); }
     }
 
     function fetchAllPrices() {
-      watchlist.forEach(item => fetchPrice(item.symbol));
+      watchlist.forEach(s => fetchPrice(s.symbol));
     }
 
     function renderWatchlist() {
-      const container = document.getElementById("watchlist");
+      const container = document.getElementById("watchlist-container");
       if (watchlist.length === 0) {
-        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 12px;">No stocks added yet.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--text-sub);">No stocks added.</div>`;
         return;
       }
 
       container.innerHTML = watchlist.map(stock => {
-        const isUp = stock.change >= 0;
-        const changeClass = isUp ? "up" : "down";
+        const isUp = (stock.change || 0) >= 0;
+        const badgeClass = isUp ? "up" : "down";
         const sign = isUp ? "+" : "";
-        const priceDisplay = stock.currentPrice ? `$${stock.currentPrice.toFixed(2)}` : "Loading...";
-        const changeDisplay = stock.change !== null ? `${sign}${stock.change.toFixed(2)}` : "";
-
-        let alertHtml = "";
-        if (stock.targetPrice) {
-          const alertClass = stock.alertTriggered ? "alert-badge alert-triggered" : "alert-badge";
-          const alertLabel = stock.alertTriggered ? `ALERT: Hit $${stock.targetPrice}` : `Target: $${stock.targetPrice}`;
-          alertHtml = `<br><span class="${alertClass}">${alertLabel}</span>`;
-        }
+        const price = stock.currentPrice ? stock.currentPrice.toFixed(2) : "0.00";
+        const changeStr = stock.change !== null && stock.change !== undefined ? `${sign}${stock.change.toFixed(2)}%` : "0.00%";
 
         return `
-          <div class="stock-item">
-            <div>
-              <div class="stock-symbol">${stock.symbol}</div>
-              <button onclick="removeStock('${stock.symbol}')" style="background:none; border:none; color:var(--red); font-size:0.75rem; padding:0; text-align:left; cursor:pointer;">Delete</button>
+          <div class="stock-row">
+            <div class="stock-summary" onclick="toggleExpand('${stock.symbol}')">
+              <div class="stock-info">
+                <div class="stock-avatar">${stock.symbol.slice(0, 2)}</div>
+                <div>
+                  <div class="stock-ticker">${stock.symbol}</div>
+                  <div class="stock-subtext">Vol 21.5M</div>
+                </div>
+              </div>
+              <div class="stock-metrics">
+                <div class="stock-ltp">$${price}</div>
+                <div class="badge-pill ${badgeClass}">${changeStr}</div>
+              </div>
             </div>
-            <div>
-              <div class="stock-price">${priceDisplay}</div>
-              <div class="stock-change ${changeClass}">${changeDisplay}</div>
-              ${alertHtml}
+
+            <!-- Expandable Detailed Section -->
+            <div class="stock-details" id="details-${stock.symbol}">
+              <div style="font-size: 0.8rem; color: var(--text-sub); font-weight: 600;">7-Day Price History</div>
+              <div class="chart-container">
+                <canvas id="chart-${stock.symbol}"></canvas>
+              </div>
+              <div class="detail-actions">
+                <span style="font-size: 0.8rem; color: var(--text-sub);">Click anywhere to collapse</span>
+                <button class="btn-delete" onclick="event.stopPropagation(); removeStock('${stock.symbol}')">Delete Ticker</button>
+              </div>
             </div>
           </div>
         `;
       }).join("");
     }
+
+    renderWatchlist();
+    if (apiKey) fetchAllPrices();
   </script>
 </body>
 </html>
